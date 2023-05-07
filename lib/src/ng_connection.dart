@@ -23,10 +23,10 @@ class NgConnection implements Connection {
 
   NgConnection._();
 
-  late TSocketTransport socketTransport;
-  late TFramedTransport transport;
-  late THeaderProtocol protocol;
-  late GraphServiceClient client;
+  late ng.TSocketTransport socketTransport;
+  late ng.TFramedTransport transport;
+  late ng.THeaderProtocol protocol;
+  late ng.GraphServiceClient client;
   late Map<String, dynamic> properties;
   int? _sessionId;
   int? timezoneOffset;
@@ -41,19 +41,19 @@ class NgConnection implements Connection {
   /// 因为连接还没有打开。
   NgConnection._create(Uri address, {Map<String, dynamic>? properties}) {
     this.properties = properties ?? <String, dynamic>{};
-    socketTransport = TSocketTransport(
+    socketTransport = ng.TSocketTransport(
       host: address.host,
       port: address.port,
       connectionTimeout: properties?[timeoutKey] ?? 6000,
     );
 
-    transport = THeaderTransport(
+    transport = ng.THeaderTransport(
         transport: socketTransport,
-        clientTypes: [ClientTypes.HEADERS],
+        clientTypes: [ng.ClientTypes.HEADERS],
         supportedClients: [false]);
 
-    protocol = THeaderProtocol(transport);
-    client = GraphServiceClient(protocol);
+    protocol = ng.THeaderProtocol(transport);
+    client = ng.GraphServiceClient(protocol);
   }
 
   /// Invoked in [DriverManager.getConnection], after the connection created.
@@ -73,10 +73,10 @@ class NgConnection implements Connection {
   /// 检查客户端和服务端的版本是否兼容
   /// 如果不兼容，抛出异常
   Future<void> verifyVersion() async {
-    VerifyClientVersionResp resp =
-        await client.verifyClientVersion(VerifyClientVersionReq());
+    ng.VerifyClientVersionResp resp =
+        await client.verifyClientVersion(ng.VerifyClientVersionReq());
 
-    if (resp.error_code != ErrorCode.SUCCEEDED) {
+    if (resp.error_code != ng.ErrorCode.SUCCEEDED) {
       throw VersionException(
           message: String.fromCharCodes(resp.error_msg ?? []));
     }
@@ -86,12 +86,12 @@ class NgConnection implements Connection {
   ///
   /// 认证用户
   Future<void> authencate() async {
-    AuthResponse resp = await client.authenticate(
+    ng.AuthResponse resp = await client.authenticate(
       Int8List.fromList(utf8.encode(properties[DriverManager.usrKey] ?? '')),
       Int8List.fromList(utf8.encode(properties[DriverManager.pwdKey] ?? '')),
     );
 
-    if (resp.error_code != ErrorCode.SUCCEEDED) {
+    if (resp.error_code != ng.ErrorCode.SUCCEEDED) {
       if (resp.error_msg != null) {
         throw ConnectException(message: String.fromCharCodes(resp.error_msg!));
       } else {

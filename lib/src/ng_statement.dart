@@ -6,17 +6,17 @@ class NgStatement implements Statement {
   NgStatement(this._conn);
 
   @override
-  Future<bool> execute([String? gql]) {
-    // TODO: implement execute
-    throw UnimplementedError();
+  Future<bool> execute([String? gql]) async {
+    var rs = await executeQuery(gql);
+    return rs.success;
   }
 
   @override
   Future<ResultSet> executeQuery([String? gql]) async {
-    ExecutionResponse resp = await _conn.client.execute(
+    ng.ExecutionResponse resp = await _conn.client.execute(
         _conn._sessionId ?? 0, Int8List.fromList(utf8.encode(gql ?? '')));
-    if (resp.error_code == ErrorCode.SUCCEEDED) {
-      return NgResultSet();
+    if (resp.error_code == ng.ErrorCode.SUCCEEDED) {
+      return _handleResult(resp, _conn.timezoneOffset);
     } else {
       print(utf8.decode(resp.error_msg ?? []));
       throw GdbcQueryException(message: utf8.decode(resp.error_msg ?? []));

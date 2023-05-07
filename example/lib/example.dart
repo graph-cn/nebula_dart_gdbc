@@ -19,8 +19,7 @@ void main(List<String> args) async {
   );
 
   var stmt = await conn.createStatement();
-  await conn.executeQuery('use test');
-  var rs = await stmt.executeQuery('MATCH (n) RETURN n LIMIT 10;');
+  var rs = await stmt.executeQuery('SHOW SPACES;');
 
   print(rs);
   await conn.close();

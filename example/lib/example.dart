@@ -6,16 +6,7 @@ void main(List<String> args) async {
   DriverManager.registerDriver(NgDriver());
 
   var conn = await DriverManager.getConnection(
-    'gdbc.nebula://127.0.0.1:9669/?username=root&password=nebula&space=test',
-    properties: <String, dynamic>{
-      // properties is optional
-      DriverManager.usrKey: 'root',
-      DriverManager.pwdKey: 'nebula',
-      'timeout': 1000,
-      'space': 'test',
-    },
-    username: 'root', // username is optional
-    password: 'nebula', // password is optional
+    'gdbc.nebula://127.0.0.1:9669/?username=root&password=nebula&space=test&timeout=1000',
   );
 
   var stmt = await conn.createStatement();

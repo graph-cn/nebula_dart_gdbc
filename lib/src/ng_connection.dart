@@ -1,3 +1,7 @@
+// Copyright (c) 2023- All nebula_dart_gdbc authors. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
+
 part of nebula_dart_gdbc;
 
 /// Create by [DriverManager.getConnection]
@@ -44,7 +48,7 @@ class NgConnection implements Connection {
     socketTransport = ng.TSocketTransport(
       host: address.host,
       port: address.port,
-      connectionTimeout: properties?[timeoutKey] ?? 6000,
+      connectionTimeout: int.tryParse('${properties?[timeoutKey]}') ?? 6000,
     );
 
     transport = ng.THeaderTransport(

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:nebula_dart_gdbc/nebula_dart_gdbc.dart';
-import 'package:nebula_graph/nebula_graph.dart' as ng;
+import 'package:nebula_dart_gdbc/gen/nebula_graph/nebula_graph.dart' as ng;
 
 // export all dart_gdbc and alias it to gdbc
 export 'package:dart_gdbc/dart_gdbc.dart';

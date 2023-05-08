@@ -1,6 +1,6 @@
 name: nebula_dart_gdbc
-description: A sample command-line application.
-version: 1.0.0
+description: A database driver for nebula graph based on dart_gdbc
+version: 0.0.1
 publish_to: none
 # repository: https://github.com/my_org/my_repo
 
@@ -8,10 +8,10 @@ environment:
   sdk: '>=2.19.0 <3.0.0'
 
 dependencies:
-  nebula_graph:
-    path: D:/work/dudu-ltd/nebula_dart/nebula_graph
-  dart_gdbc:
-    path: ../dart_gdbc
+  # nebula_graph:
+  #   path: D:/work/dudu-ltd/nebula_dart/nebula_graph
+  fbthrift: ^1.0.0+1
+  dart_gdbc: ^0.0.1
 
 dev_dependencies:
   lints: ^2.0.0

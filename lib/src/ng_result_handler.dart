@@ -1,3 +1,7 @@
+// Copyright (c) 2023- All nebula_dart_gdbc authors. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
+
 part of nebula_dart_gdbc;
 
 extension Int8ListToString on Int8List {
@@ -6,13 +10,13 @@ extension Int8ListToString on Int8List {
   }
 }
 
-NgResultSet _handleResult(ng.ExecutionResponse rs, int? timezoneOffset) {
-  NgResultSet result = _handleDataSet(rs.data, null, timezoneOffset);
+NgResultSet handleResult(ng.ExecutionResponse rs, int? timezoneOffset) {
+  NgResultSet result = handleDataSet(rs.data, null, timezoneOffset);
   result.success = rs.error_code == ng.ErrorCode.SUCCEEDED;
   return result;
 }
 
-NgResultSet _handleDataSet(
+NgResultSet handleDataSet(
     ng.DataSet? dataSet, ValueMetaData? meta, int? timezoneOffset) {
   meta?.type = GdbTypes.dataSet;
   NgResultSet result = NgResultSet();
@@ -52,7 +56,7 @@ _handle(dynamic v, ValueMetaData meta, int? timezoneOffset) {
   handler = v is ng.Value
       ? _handleValue
       : v is ng.DataSet
-          ? _handleDataSet
+          ? handleDataSet
           : v is ng.Step
               ? _handleStep
               : null;
@@ -149,7 +153,7 @@ dynamic _handleValue(ng.Value v, ValueMetaData meta, int? timezoneOffset) {
     return _handleSet(v.uVal!, meta, timezoneOffset);
   }
   if (v.gVal != null) {
-    return _handleDataSet(v.gVal, meta, timezoneOffset);
+    return handleDataSet(v.gVal, meta, timezoneOffset);
   }
   if (v.ggVal != null) {
     return _handleGeo(v.ggVal!, meta);

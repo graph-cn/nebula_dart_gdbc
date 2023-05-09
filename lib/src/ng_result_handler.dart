@@ -96,7 +96,7 @@ dynamic _handleValue(ng.Value v, ValueMetaData meta, int? timezoneOffset) {
     return v.iVal;
   }
   if (v.fVal != null) {
-    meta.type = GdbTypes.float;
+    meta.type = GdbTypes.double;
     return v.fVal;
   }
   if (v.sVal != null) {
@@ -207,14 +207,6 @@ _handleList(ng.NList v, ValueMetaData meta, int? timezoneOffset) {
   return values;
 }
 
-const _needTypeDetail = [
-  GdbTypes.dataSet,
-  GdbTypes.node,
-  GdbTypes.relationship,
-  GdbTypes.path,
-  GdbTypes.step,
-];
-
 _handleCollection(
   ValueMetaData meta,
   dynamic values,
@@ -230,18 +222,10 @@ _handleCollection(
       ..name = ''
       ..type = GdbTypes.unknown;
     var value = _handle(v, valueMeta, timezoneOffset);
-    // TODO 补全path属性
-    if (_needTypeDetail.contains(valueMeta.type) && list != null) {
-      for (var element in valueMeta.submetas) {
-        var c = valueMeta.submetas.indexOf(element);
-        var valueIdx = meta.addSubmeta(element);
-        if (list.length <= valueIdx) {
-          list.length = valueIdx + 1;
-          list[valueIdx] = value[c];
-        }
-      }
-    } else {
-      list?.add(value);
+    var valueIdx = meta.addSubmeta(valueMeta);
+    if (list != null && list.length <= valueIdx) {
+      list.length = valueIdx + 1;
+      list[valueIdx] = value;
     }
     set?.add(value);
   }
@@ -260,7 +244,7 @@ _handlePath(ng.Path v, ValueMetaData meta, int? timezoneOffset) {
   meta.type = GdbTypes.path;
   var path = <dynamic>[];
 
-  ValueMetaData startNode = ValueMetaData()..name = r'startNode$';
+  ValueMetaData startNode = ValueMetaData()..name = MetaKey.startNode;
   if (v.src != null) {
     var value = _handleNode(v.src!, startNode, timezoneOffset);
     _extendListBasic(meta, startNode, path, value);
@@ -268,10 +252,15 @@ _handlePath(ng.Path v, ValueMetaData meta, int? timezoneOffset) {
 
   if (v.steps != null) {
     ValueMetaData stepMeta = ValueMetaData()
-      ..name = r'steps$'
+      ..name = MetaKey.steps
       ..type = GdbTypes.list;
     var steps = <dynamic>[];
     _handleCollection(stepMeta, v.steps, timezoneOffset, list: steps);
+    var stepsIdx = meta.addSubmeta(stepMeta);
+    if (path.length <= stepsIdx) {
+      path.length = stepsIdx + 1;
+      path[stepsIdx] = steps;
+    }
   }
 
   return path;
@@ -281,23 +270,25 @@ List<dynamic> _handleRelationship(
     ng.Edge v, ValueMetaData meta, int? timezoneOffset) {
   meta.type = GdbTypes.relationship;
   var edgeData = [];
-  ValueMetaData startNodeId = ValueMetaData()..name = r'startNodeId$';
+  ValueMetaData startNodeId = ValueMetaData()..name = MetaKey.startId;
   _extendList(meta, startNodeId, edgeData, v.src, timezoneOffset);
 
   ValueMetaData idMeta = ValueMetaData()
-    ..name = r'id$'
+    ..name = MetaKey.relationshipId
     ..type = GdbTypes.int;
   _extendListBasic(meta, idMeta, edgeData, v.ranking);
 
-  ValueMetaData endNodeId = ValueMetaData()..name = r'endNodeId$';
+  ValueMetaData endNodeId = ValueMetaData()..name = MetaKey.endId;
   _extendList(meta, endNodeId, edgeData, v.dst, timezoneOffset);
 
   ValueMetaData edgeMeta = ValueMetaData()
     ..name = utf8.decode(v.name ?? [])
-    ..type = GdbTypes.relationship;
+    ..type = GdbTypes.prop;
   List<dynamic> edgeProp = [];
 
   _handleProps(v.props, edgeMeta, edgeProp, timezoneOffset);
+  meta.addSubmeta(edgeMeta);
+  edgeData.add(edgeProp);
   return edgeData;
 }
 
@@ -305,7 +296,7 @@ List<dynamic> _handleNode(
     ng.Vertex v, ValueMetaData meta, int? timezoneOffset) {
   meta.type = GdbTypes.node;
   ValueMetaData idMeta = ValueMetaData();
-  idMeta.name = r'id$';
+  idMeta.name = MetaKey.nodeId;
   var nodeData = [];
 
   _extendList(meta, idMeta, nodeData, v.vid!, timezoneOffset);

@@ -64,22 +64,32 @@ _handle(dynamic v, ValueMetaData meta, int? timezoneOffset) {
 }
 
 _handleStep(ng.Step v, ValueMetaData meta, int? timezoneOffset) {
+  meta.type = GdbTypes.step;
   var step = <dynamic>[];
   ValueMetaData nodeMeta = ValueMetaData()..type = GdbTypes.node;
   var node =
       v.dst != null ? _handleNode(v.dst!, nodeMeta, timezoneOffset) : null;
 
-  var nodeIdx = meta.addSubmeta(nodeMeta);
-  if (step.length <= nodeIdx) {
-    step.length = nodeIdx + 1;
-    step[nodeIdx] = node;
+  for (var subsub in nodeMeta.submetas) {
+    var subsubIdx = meta.addSubmeta(subsub);
+    if (step.length <= subsubIdx) {
+      step.length = subsubIdx + 1;
+      step[subsubIdx] = node?[nodeMeta.submetas.indexOf(subsub)];
+    }
   }
 
   ValueMetaData propMeta = ValueMetaData()..type = GdbTypes.prop;
   var props = <dynamic>[];
   _handleProps(v.props, propMeta, props, timezoneOffset);
-  step.add(props);
-  return node;
+
+  for (var subsub in propMeta.submetas) {
+    var subsubIdx = meta.addSubmeta(subsub);
+    if (step.length <= subsubIdx) {
+      step.length = subsubIdx + 1;
+      step[subsubIdx] = props[propMeta.submetas.indexOf(subsub)];
+    }
+  }
+  return step;
 }
 
 dynamic _handleValue(ng.Value v, ValueMetaData meta, int? timezoneOffset) {
@@ -213,13 +223,14 @@ _handleCollection(
   int? timezoneOffset, {
   List<dynamic>? list,
   Set<dynamic>? set,
+  String? Function(dynamic)? nameGetter,
 }) {
   if (values == null) {
     return;
   }
   for (var v in values) {
     ValueMetaData valueMeta = ValueMetaData()
-      ..name = ''
+      ..name = nameGetter?.call(v)
       ..type = GdbTypes.unknown;
     var value = _handle(v, valueMeta, timezoneOffset);
     var valueIdx = meta.addSubmeta(valueMeta);
@@ -238,32 +249,39 @@ List<dynamic> _handleMap(ng.NMap v, ValueMetaData meta, int? timezoneOffset) {
   return kvs;
 }
 
-_handlePath(ng.Path v, ValueMetaData meta, int? timezoneOffset) {
-  v.src;
-  v.steps;
+_handlePath(ng.Path path, ValueMetaData meta, int? timezoneOffset) {
+  path.src;
+  path.steps;
   meta.type = GdbTypes.path;
-  var path = <dynamic>[];
+  var pathData = <dynamic>[];
 
   ValueMetaData startNode = ValueMetaData()..name = MetaKey.startNode;
-  if (v.src != null) {
-    var value = _handleNode(v.src!, startNode, timezoneOffset);
-    _extendListBasic(meta, startNode, path, value);
+  if (path.src != null) {
+    var value = _handleNode(path.src!, startNode, timezoneOffset);
+    _extendListBasic(meta, startNode, pathData, value);
   }
 
-  if (v.steps != null) {
+  if (path.steps != null) {
     ValueMetaData stepMeta = ValueMetaData()
       ..name = MetaKey.steps
       ..type = GdbTypes.list;
     var steps = <dynamic>[];
-    _handleCollection(stepMeta, v.steps, timezoneOffset, list: steps);
-    var stepsIdx = meta.addSubmeta(stepMeta);
-    if (path.length <= stepsIdx) {
-      path.length = stepsIdx + 1;
-      path[stepsIdx] = steps;
+    _handleCollection(
+      stepMeta,
+      path.steps,
+      timezoneOffset,
+      list: steps,
+      nameGetter: (v) => (v.name as Int8List?)?.utf8String(),
+    );
+
+    var stepIdx = meta.addSubmeta(stepMeta);
+    if (pathData.length <= stepIdx) {
+      pathData.length = stepIdx + 1;
+      pathData[stepIdx] = steps;
     }
   }
 
-  return path;
+  return pathData;
 }
 
 List<dynamic> _handleRelationship(

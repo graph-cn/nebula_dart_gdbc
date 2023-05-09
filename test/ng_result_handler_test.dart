@@ -234,14 +234,15 @@ void main() {
               'id': 1,
               'tags': [
                 {
-                  'name': 'testTagName',
-                  'props': {'testPropName': 11, 'testPropName2': '12'}
+                  'name': 'startNodeTagName',
+                  'props': {'startProp1': 11, 'startProp2': '12'}
                 }
               ]
             },
             'steps': [
               {
                 fnKey: step,
+                "name": "testStepName",
                 'endNode': {
                   fnKey: vertex,
                   'id': 3,
@@ -271,20 +272,19 @@ void main() {
     expectAll([0], GdbTypes.path, 'p', null, result);
     expectAll([0, 0], GdbTypes.node, MetaKey.startNode, null, result);
     expectAll([0, 0, 0], GdbTypes.int, MetaKey.nodeId, 1, result);
-    expectAll([0, 0, 1], GdbTypes.tag, 'testTagName', null, result);
-    expectAll([0, 0, 1, 0], GdbTypes.int, 'testPropName', 11, result);
-    expectAll([0, 0, 1, 1], GdbTypes.string, 'testPropName2', '12', result);
+    expectAll([0, 0, 1], GdbTypes.tag, 'startNodeTagName', null, result);
+    expectAll([0, 0, 1, 0], GdbTypes.int, 'startProp1', 11, result);
+    expectAll([0, 0, 1, 1], GdbTypes.string, 'startProp2', '12', result);
 
     expectAll([0, 1], GdbTypes.list, null, null, result);
-    expectAll([0, 1, 0], GdbTypes.node, 'endNode', null, result);
+    expectAll([0, 1, 0], GdbTypes.step, 'testStepName', null, result);
     expectAll([0, 1, 0, 0], GdbTypes.int, MetaKey.nodeId, 3, result);
     expectAll([0, 1, 0, 1], GdbTypes.tag, 'testTagName', null, result);
     expectAll([0, 1, 0, 1, 0], GdbTypes.int, 'testPropName', 31, result);
 
-    expectAll([0, 1, 1], GdbTypes.prop, 'testPropName', [21], result);
-    expectAll([0, 1, 1, 0], GdbTypes.int, 'testPropName', 21, result);
-    expectAll([0, 1, 1, 1], GdbTypes.string, 'testPropName2', '22', result);
-    expectAll([0, 1, 1, 2], GdbTypes.int, 'testPropName3', 23, result);
+    expectAll([0, 1, 0, 2], GdbTypes.int, 'testPropName', 21, result);
+    expectAll([0, 1, 0, 3], GdbTypes.string, 'testPropName2', '22', result);
+    expectAll([0, 1, 0, 4], GdbTypes.int, 'testPropName3', 23, result);
   });
 
   test('Test null', () {
@@ -348,6 +348,7 @@ Value path(dynamic v) {
 Step step(dynamic v) {
   var step = Step()
     ..dst = vertex(v['endNode']).vVal
+    ..name = (v['name'] as String).bytes
     ..props = Map.fromEntries(
       ((v['props']).entries as Iterable<MapEntry<String, dynamic>>).map(
         (e) {

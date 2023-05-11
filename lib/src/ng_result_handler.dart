@@ -11,32 +11,109 @@ extension Int8ListToString on Int8List {
 }
 
 NgResultSet handleResult(ng.ExecutionResponse rs, int? timezoneOffset) {
-  NgResultSet result = handleDataSet(rs.data, null, timezoneOffset);
-  result.success = rs.error_code == ng.ErrorCode.SUCCEEDED;
+  ValueMetaData? meta = ValueMetaData();
+  var rows = _handleValue(rs.data, meta, timezoneOffset);
+  NgResultSet result = NgResultSet()
+    ..success = rs.error_code == ng.ErrorCode.SUCCEEDED
+    ..rows = rows ?? []
+    ..metas = meta.submetas;
   return result;
 }
 
-NgResultSet handleDataSet(
-    ng.DataSet? dataSet, ValueMetaData? meta, int? timezoneOffset) {
-  meta?.type = GdbTypes.dataSet;
-  NgResultSet result = NgResultSet();
+Map<GdbTypes, bool Function(dynamic)> typeGetter = {
+  GdbTypes.none: (v) => (v is ng.Value && v.nVal == 0) || v == null,
+  GdbTypes.prop: (v) => v is Map<Int8List, ng.Value>,
+  GdbTypes.node: (v) => v is ng.Vertex || (v is ng.Value && v.vVal != null),
+  GdbTypes.relationship: (v) => v is ng.Value && v.eVal != null,
+  GdbTypes.path: (v) => v is ng.Value && v.pVal != null,
+
+  GdbTypes.step: (v) => v is ng.Step,
+  GdbTypes.dataSet: (v) => v is ng.DataSet,
+
+  GdbTypes.list: (v) => v is List || (v is ng.Value && v.lVal != null),
+  GdbTypes.map: (v) => v is ng.Value && v.mVal != null,
+  GdbTypes.set: (v) => v is ng.Value && v.uVal != null,
+
+  GdbTypes.bool: (v) => v is ng.Value && v.bVal != null,
+  GdbTypes.int: (v) => v is ng.Value && v.iVal != null,
+  GdbTypes.double: (v) => v is ng.Value && v.fVal != null,
+
+  GdbTypes.string: (v) => v is ng.Value && v.sVal != null,
+  GdbTypes.bytes: (v) => v is ng.Value && v.bVal != null,
+
+  GdbTypes.date: (v) => v is ng.Value && v.dVal != null,
+  GdbTypes.time: (v) => v is ng.Value && v.tVal != null,
+  GdbTypes.dateTime: (v) => v is ng.Value && v.dtVal != null,
+  GdbTypes.duration: (v) => v is ng.Value && v.duVal != null,
+
+  GdbTypes.geo: (v) => v is ng.Value && v.ggVal != null,
+  GdbTypes.line: (v) => v is ng.LineString,
+  GdbTypes.point: (v) => v is ng.Point,
+  GdbTypes.polygon: (v) => v is ng.Polygon,
+
+  // must at last
+  GdbTypes.unknown: (v) => true,
+};
+
+Map<
+        GdbTypes,
+        dynamic Function(
+            dynamic, ValueMetaData, int?, String? Function(int, dynamic)? nget)>
+    typeHandler = {
+  GdbTypes.none: (v, m, t, nget) => null,
+  GdbTypes.prop: (v, m, t, nget) => _handleProp(v, m, t),
+  GdbTypes.node: (v, m, t, nget) =>
+      _handleNode(v is ng.Vertex ? v : v.vVal, m, t),
+  GdbTypes.relationship: (v, m, t, nget) => _handleRelationship(v.eVal, m, t),
+  GdbTypes.path: (v, m, t, nget) => _handlePath(v.pVal, m, t),
+  //
+  GdbTypes.step: (v, m, t, nget) => _handleStep(v, m, t),
+  GdbTypes.dataSet: (v, m, t, nget) => handleDataSet(v, m, t),
+  //
+  GdbTypes.list: (v, m, t, nget) =>
+      _handleList(v is List ? v : v.lVal?.values, m, t, nget),
+  GdbTypes.map: (v, m, t, nget) => _handleMap(v.mVal, m, t),
+  GdbTypes.set: (v, m, t, nget) => _handleSet(v.uVal, m, t, nget),
+  //
+  GdbTypes.bool: (v, m, t, nget) => v.bVal,
+  GdbTypes.int: (v, m, t, nget) => v.iVal,
+  GdbTypes.double: (v, m, t, nget) => v.fVal,
+  //
+  GdbTypes.string: (v, m, t, nget) => (v.sVal as Int8List?)?.utf8String(),
+  GdbTypes.bytes: (v, m, t, nget) => throw UnimplementedError(), // TODO
+  //
+  GdbTypes.date: (v, m, t, nget) => _handleDate(v.dVal, m, t),
+  GdbTypes.time: (v, m, t, nget) => _handleTime(v.tVal, m, t),
+  GdbTypes.dateTime: (v, m, t, nget) => _handleDateTime(v.dtVal, m, t),
+  GdbTypes.duration: (v, m, t, nget) => _handleDuration(v.duVal, m, t),
+
+  GdbTypes.geo: (v, m, t, nget) => _handleGeo(v, m),
+  GdbTypes.line: (v, m, t, nget) => _handleLine(v, m),
+  GdbTypes.point: (v, m, t, nget) => _handlePoint(v, m),
+  GdbTypes.polygon: (v, m, t, nget) => _handlePolygon(v, m),
+
+  // must at last
+  GdbTypes.unknown: (v, m, t, nget) => v,
+};
+
+handleDataSet(ng.DataSet? dataSet, ValueMetaData meta, int? timezoneOffset) {
   if (dataSet == null) {
-    result.metas = [];
-    result.rows = [];
-    return result;
+    return [];
   }
-
+  var rows = [];
   var cols = dataSet.column_names;
-  result.metas = cols
-          ?.map(
-            (e) => ValueMetaData()
-              ..name = utf8.decode(e)
-              ..type = GdbTypes.unknown,
-          )
-          .toList() ??
-      [];
+  meta.submetas.addAll(
+    cols
+            ?.map(
+              (e) => ValueMetaData()
+                ..name = utf8.decode(e)
+                ..type = GdbTypes.unknown,
+            )
+            .toList() ??
+        [],
+  );
 
-  result.rows = dataSet.rows
+  rows = dataSet.rows
           ?.map((row) => List<dynamic>.filled(cols?.length ?? 0, null))
           .toList() ??
       [];
@@ -44,349 +121,213 @@ NgResultSet handleDataSet(
   for (var r = 0; r < (dataSet.rows?.length ?? 0); r++) {
     for (var c = 0; c < (cols?.length ?? 0); c++) {
       var value = dataSet.rows?[r].values?[c];
-      var meta = result.metas[c];
-      result.rows[r][c] = _handleValue(value!, meta, timezoneOffset);
+      var submeta = meta.submetas[c];
+      rows[r][c] = _handleValue(value!, submeta, timezoneOffset);
     }
   }
-  return result;
+  return rows;
 }
 
-_handle(dynamic v, ValueMetaData meta, int? timezoneOffset) {
-  Function? handler;
-  handler = v is ng.Value
-      ? _handleValue
-      : v is ng.DataSet
-          ? handleDataSet
-          : v is ng.Step
-              ? _handleStep
-              : null;
-  return handler?.call(v, meta, timezoneOffset) ?? v;
-}
-
-_handleStep(ng.Step v, ValueMetaData meta, int? timezoneOffset) {
-  meta.type = GdbTypes.step;
-  var step = <dynamic>[];
-  ValueMetaData nodeMeta = ValueMetaData()..type = GdbTypes.node;
-  var node =
-      v.dst != null ? _handleNode(v.dst!, nodeMeta, timezoneOffset) : null;
-
-  for (var subsub in nodeMeta.submetas) {
-    var subsubIdx = meta.addSubmeta(subsub);
-    if (step.length <= subsubIdx) {
-      step.length = subsubIdx + 1;
-      step[subsubIdx] = node?[nodeMeta.submetas.indexOf(subsub)];
-    }
-  }
-
-  ValueMetaData propMeta = ValueMetaData()..type = GdbTypes.prop;
-  var props = <dynamic>[];
-  _handleProps(v.props, propMeta, props, timezoneOffset);
-
-  for (var subsub in propMeta.submetas) {
-    var subsubIdx = meta.addSubmeta(subsub);
-    if (step.length <= subsubIdx) {
-      step.length = subsubIdx + 1;
-      step[subsubIdx] = props[propMeta.submetas.indexOf(subsub)];
-    }
-  }
-  return step;
-}
-
-dynamic _handleValue(ng.Value v, ValueMetaData meta, int? timezoneOffset) {
-  if (v.nVal != null) {
-    meta.type = GdbTypes.none;
-    return null;
-  }
-  if (v.bVal != null) {
-    meta.type = GdbTypes.bool;
-    return v.bVal;
-  }
-  if (v.iVal != null) {
-    meta.type = GdbTypes.int;
-    return v.iVal;
-  }
-  if (v.fVal != null) {
-    meta.type = GdbTypes.double;
-    return v.fVal;
-  }
-  if (v.sVal != null) {
-    meta.type = GdbTypes.string;
-    return v.sVal?.utf8String();
-  }
-  if (v.dVal != null) {
-    meta.type = GdbTypes.date;
-
-    return DateTime(
-      v.dVal!.year,
-      v.dVal!.month,
-      v.dVal!.day,
-      (timezoneOffset ?? 0),
-    );
-  }
-  if (v.tVal != null) {
-    meta.type = GdbTypes.time;
-    return DateTime(
-      v.tVal!.hour,
-      v.tVal!.minute,
-      v.tVal!.sec,
-      v.tVal!.microsec,
-    );
-  }
-  if (v.dtVal != null) {
-    meta.type = GdbTypes.dateTime;
-    return DateTime(
-      v.dtVal!.year,
-      v.dtVal!.month,
-      v.dtVal!.day,
-      v.dtVal!.hour + (timezoneOffset ?? 0),
-      v.dtVal!.minute,
-      v.dtVal!.sec,
-      v.dtVal!.microsec,
-    );
-  }
-  if (v.vVal != null) {
-    return _handleNode(v.vVal!, meta, timezoneOffset);
-  }
-  if (v.eVal != null) {
-    return _handleRelationship(v.eVal!, meta, timezoneOffset);
-  }
-  if (v.pVal != null) {
-    return _handlePath(v.pVal!, meta, timezoneOffset);
-  }
-  if (v.lVal != null) {
-    return _handleList(v.lVal!, meta, timezoneOffset);
-  }
-  if (v.mVal != null) {
-    return _handleMap(v.mVal!, meta, timezoneOffset);
-  }
-  if (v.uVal != null) {
-    return _handleSet(v.uVal!, meta, timezoneOffset);
-  }
-  if (v.gVal != null) {
-    return handleDataSet(v.gVal, meta, timezoneOffset);
-  }
-  if (v.ggVal != null) {
-    return _handleGeo(v.ggVal!, meta);
-  }
-
-  if (v.duVal != null) {
-    return _handleDuration(meta, v);
-  }
-}
-
-Duration _handleDuration(ValueMetaData meta, ng.Value v) {
-  meta.type = GdbTypes.duration;
-  v.duVal?.isSetMicroseconds();
-  v.duVal?.isSetSeconds();
-  v.duVal?.isSetMonths();
-
-  return Duration(
-    seconds: v.duVal?.seconds ?? 0,
-    microseconds: v.duVal?.microseconds ?? 0,
-  );
-}
-
-_handleGeo(ng.Geography v, ValueMetaData meta) {
-  if (v.isSetLsVal()) {
-    meta.type = GdbTypes.line;
-    return v.lsVal;
-  }
-  if (v.isSetPtVal()) {
-    meta.type = GdbTypes.point;
-    return v.ptVal;
-  }
-  if (v.isSetPgVal()) {
-    meta.type = GdbTypes.polygon;
-    return v.pgVal;
-  }
-  meta.type = GdbTypes.unknown;
-  return v;
-}
-
-_handleSet(ng.NSet v, ValueMetaData meta, int? timezoneOffset) {
-  meta.type = GdbTypes.set;
-  var values = <dynamic>{};
-  _handleCollection(meta, v.values, timezoneOffset, set: values);
-  return values;
-}
-
-_handleList(ng.NList v, ValueMetaData meta, int? timezoneOffset) {
-  meta.type = GdbTypes.list;
-  var values = <dynamic>[];
-  _handleCollection(meta, v.values, timezoneOffset, list: values);
-  return values;
-}
-
-_handleCollection(
+_handleProp(
+  Map<Int8List, ng.Value> props,
   ValueMetaData meta,
-  dynamic values,
-  int? timezoneOffset, {
-  List<dynamic>? list,
-  Set<dynamic>? set,
-  String? Function(dynamic)? nameGetter,
-}) {
-  if (values == null) {
-    return;
-  }
-  for (var v in values) {
-    ValueMetaData valueMeta = ValueMetaData()
-      ..name = nameGetter?.call(v)
-      ..type = GdbTypes.unknown;
-    var value = _handle(v, valueMeta, timezoneOffset);
-    var valueIdx = meta.addSubmeta(valueMeta);
-    if (list != null && list.length <= valueIdx) {
-      list.length = valueIdx + 1;
-      list[valueIdx] = value;
-    }
-    set?.add(value);
-  }
-}
-
-List<dynamic> _handleMap(ng.NMap v, ValueMetaData meta, int? timezoneOffset) {
-  meta.type = GdbTypes.map;
-  var kvs = <dynamic>[];
-  _handleProps(v.kvs, meta, kvs, timezoneOffset);
-  return kvs;
-}
-
-_handlePath(ng.Path path, ValueMetaData meta, int? timezoneOffset) {
-  path.src;
-  path.steps;
-  meta.type = GdbTypes.path;
-  var pathData = <dynamic>[];
-
-  ValueMetaData startNode = ValueMetaData()..name = MetaKey.startNode;
-  if (path.src != null) {
-    var value = _handleNode(path.src!, startNode, timezoneOffset);
-    _extendListBasic(meta, startNode, pathData, value);
-  }
-
-  if (path.steps != null) {
-    ValueMetaData stepMeta = ValueMetaData()
-      ..name = MetaKey.steps
-      ..type = GdbTypes.list;
-    var steps = <dynamic>[];
-    _handleCollection(
-      stepMeta,
-      path.steps,
-      timezoneOffset,
-      list: steps,
-      nameGetter: (v) => (v.name as Int8List?)?.utf8String(),
-    );
-
-    var stepIdx = meta.addSubmeta(stepMeta);
-    if (pathData.length <= stepIdx) {
-      pathData.length = stepIdx + 1;
-      pathData[stepIdx] = steps;
-    }
-  }
-
-  return pathData;
-}
-
-List<dynamic> _handleRelationship(
-    ng.Edge v, ValueMetaData meta, int? timezoneOffset) {
-  meta.type = GdbTypes.relationship;
-  var edgeData = [];
-  ValueMetaData startNodeId = ValueMetaData()..name = MetaKey.startId;
-  _extendList(meta, startNodeId, edgeData, v.src, timezoneOffset);
-
-  ValueMetaData idMeta = ValueMetaData()
-    ..name = MetaKey.relationshipId
-    ..type = GdbTypes.int;
-  _extendListBasic(meta, idMeta, edgeData, v.ranking);
-
-  ValueMetaData endNodeId = ValueMetaData()..name = MetaKey.endId;
-  _extendList(meta, endNodeId, edgeData, v.dst, timezoneOffset);
-
-  ValueMetaData edgeMeta = ValueMetaData()
-    ..name = utf8.decode(v.name ?? [])
-    ..type = GdbTypes.prop;
-  List<dynamic> edgeProp = [];
-
-  _handleProps(v.props, edgeMeta, edgeProp, timezoneOffset);
-  meta.addSubmeta(edgeMeta);
-  edgeData.add(edgeProp);
-  return edgeData;
+  int? timezoneOffset,
+) {
+  var propsVal = [];
+  props.forEach((key, value) {
+    var submeta = ValueMetaData()..name = key.utf8String();
+    var val = _handleValue(value, submeta, timezoneOffset);
+    meta.addSubmeta(submeta, propsVal, val);
+  });
+  return propsVal;
 }
 
 List<dynamic> _handleNode(
     ng.Vertex v, ValueMetaData meta, int? timezoneOffset) {
-  meta.type = GdbTypes.node;
-  ValueMetaData idMeta = ValueMetaData();
-  idMeta.name = MetaKey.nodeId;
   var nodeData = [];
 
-  _extendList(meta, idMeta, nodeData, v.vid!, timezoneOffset);
+  // handle id
+  ValueMetaData idMeta = ValueMetaData()..name = MetaKey.nodeId;
+  var idVal = _handleValue(v.vid!, idMeta, timezoneOffset);
+  meta.addSubmeta(idMeta, nodeData, idVal);
 
+  // handle tags
   for (var i = 0; i < (v.tags?.length ?? 0); i++) {
-    ValueMetaData tagMeta = ValueMetaData();
-    tagMeta.type = GdbTypes.tag;
-    tagMeta.name = utf8.decode(v.tags![i].name ?? []);
-    meta.addSubmeta(tagMeta);
-    _extendListForTag(meta, tagMeta, nodeData, v.tags![i], timezoneOffset);
+    ValueMetaData tagMeta = ValueMetaData()
+      ..name = v.tags![i].name?.utf8String();
+    var tagVal = _handleValue(v.tags![i].props, tagMeta, timezoneOffset);
+    meta.addSubmeta(tagMeta, nodeData, tagVal);
   }
 
   return nodeData;
 }
 
-void _extendListBasic(
-  ValueMetaData meta,
-  ValueMetaData submeta,
-  List<dynamic> nodeData,
-  dynamic value,
-) {
-  var subIdx = meta.addSubmeta(submeta);
-  if (nodeData.length <= subIdx) {
-    nodeData.length = subIdx + 1;
-  }
-  nodeData[subIdx] = value;
+List<dynamic> _handleRelationship(
+    ng.Edge v, ValueMetaData meta, int? timezoneOffset) {
+  var edgeData = [];
+  ValueMetaData startNodeId = ValueMetaData()..name = MetaKey.startId;
+  _handleValue(v.src, startNodeId, timezoneOffset,
+      parent: meta, parentVal: edgeData);
+
+  ValueMetaData idMeta = ValueMetaData()
+    ..name = MetaKey.relationshipId
+    ..type = GdbTypes.int;
+  _handleValue(ng.Value()..iVal = v.ranking, idMeta, timezoneOffset,
+      parent: meta, parentVal: edgeData);
+
+  ValueMetaData endNodeId = ValueMetaData()..name = MetaKey.endId;
+  _handleValue(v.dst, endNodeId, timezoneOffset,
+      parent: meta, parentVal: edgeData);
+
+  ValueMetaData edgeMeta = ValueMetaData()..name = v.name?.utf8String();
+  _handleValue(v.props, edgeMeta, timezoneOffset,
+      parent: meta, parentVal: edgeData);
+
+  return edgeData;
 }
 
-void _extendList(
-  ValueMetaData meta,
-  ValueMetaData submeta,
-  List<dynamic> nodeData,
-  ng.Value? v,
-  int? timezoneOffset,
-) {
-  var subIdx = meta.addSubmeta(submeta);
-  if (nodeData.length <= subIdx) {
-    nodeData.length = subIdx + 1;
-  }
+_handlePath(ng.Path path, ValueMetaData meta, int? timezoneOffset) {
+  var pathData = <dynamic>[];
 
-  nodeData[subIdx] =
-      v == null ? null : _handleValue(v, submeta, timezoneOffset);
+  ValueMetaData startNode = ValueMetaData()..name = MetaKey.startNode;
+  _handleValue(path.src!, startNode, timezoneOffset,
+      parent: meta, parentVal: pathData);
+
+  ValueMetaData steps = ValueMetaData();
+  _handleValue(
+    path.steps,
+    steps,
+    timezoneOffset,
+    parent: meta,
+    parentVal: pathData,
+    nameGetter: (idx, step) => ((step as ng.Step).name?.utf8String()),
+  );
+  return pathData;
 }
 
-void _extendListForTag(
-  ValueMetaData meta,
-  ValueMetaData submeta,
-  List<dynamic> nodeData,
-  ng.Tag tag,
-  int? timezoneOffset,
-) {
-  var subIdx = meta.addSubmeta(submeta);
-  if (nodeData.length <= subIdx) {
-    nodeData.length = subIdx + 1;
-  }
+_handleStep(ng.Step v, ValueMetaData meta, int? timezoneOffset) {
+  var step = <dynamic>[];
 
-  var props = [];
-  _handleProps(tag.props, submeta, props, timezoneOffset);
+  ValueMetaData nodeMeta = ValueMetaData();
+  _handleValue(v.dst, nodeMeta, timezoneOffset, parent: meta, parentVal: step);
 
-  nodeData[subIdx] = props;
+  ValueMetaData propMeta = ValueMetaData()..name = v.name?.utf8String();
+  _handleValue(v.props, propMeta, timezoneOffset,
+      parent: meta, parentVal: step);
+
+  return step;
 }
 
-void _handleProps(
-  Map<Int8List, ng.Value>? propsMap,
-  ValueMetaData tableMeta,
-  List<dynamic> props,
+dynamic _handleValue(
+  dynamic v,
+  ValueMetaData meta,
+  int? timezoneOffset, {
+  ValueMetaData? parent,
+  List? parentVal,
+  String? Function(int, dynamic)? nameGetter,
+}) {
+  var type = typeGetter.entries.firstWhere((getter) => getter.value(v)).key;
+  meta.type = type;
+  var val = typeHandler[type]?.call(v, meta, timezoneOffset, nameGetter);
+  parent?.addSubmeta(meta, parentVal, val);
+  return val;
+}
+
+DateTime _handleDateTime(
+  ng.DateTime v,
+  ValueMetaData meta,
   int? timezoneOffset,
 ) {
-  for (var entry in (propsMap ?? <Int8List, ng.Value>{}).entries) {
-    ValueMetaData propMeta = ValueMetaData();
-    propMeta.type = GdbTypes.prop;
-    propMeta.name = utf8.decode(entry.key);
-    _extendList(tableMeta, propMeta, props, entry.value, timezoneOffset);
+  return DateTime(
+    v.year,
+    v.month,
+    v.day,
+    v.hour + (timezoneOffset ?? 0),
+    v.minute,
+    v.sec,
+    v.microsec,
+  );
+}
+
+DateTime _handleTime(ng.Time v, ValueMetaData meta, int? timezoneOffset) {
+  return DateTime(v.hour, v.minute, v.sec, v.microsec);
+}
+
+DateTime _handleDate(ng.Date v, ValueMetaData meta, int? timezoneOffset) {
+  return DateTime(v.year, v.month, v.day, (timezoneOffset ?? 0));
+}
+
+Duration _handleDuration(
+    ng.Duration v, ValueMetaData meta, int? timezoneOffset) {
+  v.isSetMicroseconds();
+  v.isSetSeconds();
+  v.isSetMonths();
+
+  return Duration(
+    seconds: v.seconds,
+    microseconds: v.microseconds,
+  );
+}
+
+_handleGeo(ng.Geography v, ValueMetaData meta) {
+  if (v.isSetLsVal()) {
+    return v.lsVal;
   }
+  if (v.isSetPtVal()) {
+    return v.ptVal;
+  }
+  if (v.isSetPgVal()) {
+    return v.pgVal;
+  }
+  return v;
+}
+
+_handlePoint(ng.Point v, ValueMetaData meta) {
+  return <dynamic>[v.coord?.x, v.coord?.y, null];
+}
+
+_handleLine(ng.LineString v, ValueMetaData meta) {
+  return <List<dynamic>>[
+    v.coordList?.map((e) => [e.x, e.y, null]).toList() ?? []
+  ];
+}
+
+_handlePolygon(ng.Polygon v, ValueMetaData meta) {
+  return <List<List<dynamic>>>[
+    v.coordListList
+            ?.map((e) => e.map((e) => [e.x, e.y, null]).toList())
+            .toList() ??
+        []
+  ];
+}
+
+String? _idxName(p1, dynamic v) => '$p1';
+_handleSet(ng.NSet v, ValueMetaData meta, int? timezoneOffset,
+    [String? Function(int p1, dynamic p2)? nget]) {
+  return _handleList(v.values?.toList() ?? [], meta, timezoneOffset, nget);
+}
+
+_handleList(List<dynamic> values, ValueMetaData meta, int? timezoneOffset,
+    [String? Function(int p1, dynamic p2)? nget]) {
+  nget ??= _idxName;
+  var list = <dynamic>[];
+  for (var v in values) {
+    ValueMetaData valueMeta = ValueMetaData()
+      ..name = nget(values.indexOf(v), v)
+      ..type = GdbTypes.unknown;
+    _handleValue(v, valueMeta, timezoneOffset, parent: meta, parentVal: list);
+  }
+  return list;
+}
+
+List<dynamic> _handleMap(ng.NMap v, ValueMetaData meta, int? timezoneOffset) {
+  var kvs = <dynamic>[];
+  v.kvs?.entries.forEach((entry) {
+    ValueMetaData keyMeta = ValueMetaData()
+      ..name = entry.key.utf8String()
+      ..type = GdbTypes.unknown;
+    _handleValue(entry.value, keyMeta, timezoneOffset,
+        parent: meta, parentVal: kvs);
+  });
+  return kvs;
 }

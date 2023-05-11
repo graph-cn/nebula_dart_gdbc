@@ -15,6 +15,7 @@ export 'src/date.dart' show Date;
 export 'src/time.dart' show Time;
 export 'src/date_time.dart' show DateTime;
 export 'src/value.dart' show Value;
+export 'src/duration.dart' show Duration;
 export 'src/n_list.dart' show NList;
 export 'src/n_map.dart' show NMap;
 export 'src/n_set.dart' show NSet;

@@ -2,6 +2,8 @@
 //
 // This source code is licensed under Apache 2.0 License.
 
+// ignore_for_file: equal_elements_in_set, constant_identifier_names
+
 import 'dart:mirrors';
 import 'dart:typed_data';
 

@@ -25,8 +25,6 @@ part of nebula_dart_gdbc;
 class NgConnection implements Connection {
   static const String timeoutKey = 'timeout';
 
-  NgConnection._();
-
   late ng.TSocketTransport socketTransport;
   late ng.TFramedTransport transport;
   late ng.THeaderProtocol protocol;

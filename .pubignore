@@ -1,0 +1,7 @@
+
+.dart_tool/
+.vscode/
+
+**/pubspec.lock
+
+**/*_ye_dev.dart

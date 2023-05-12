@@ -322,12 +322,12 @@ _handleList(List<dynamic> values, ValueMetaData meta, int? timezoneOffset,
 
 List<dynamic> _handleMap(ng.NMap v, ValueMetaData meta, int? timezoneOffset) {
   var kvs = <dynamic>[];
-  v.kvs?.entries.forEach((entry) {
+  for (var entry in (v.kvs?.entries ?? <MapEntry<Int8List, ng.Value>>[])) {
     ValueMetaData keyMeta = ValueMetaData()
       ..name = entry.key.utf8String()
       ..type = GdbTypes.unknown;
     _handleValue(entry.value, keyMeta, timezoneOffset,
         parent: meta, parentVal: kvs);
-  });
+  }
   return kvs;
 }

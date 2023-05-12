@@ -2,6 +2,8 @@
 //
 // This source code is licensed under Apache 2.0 License.
 
+// ignore_for_file: prefer_final_fields
+
 part of nebula_dart_gdbc;
 
 class NgStatement implements Statement {

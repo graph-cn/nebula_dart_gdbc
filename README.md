@@ -2,6 +2,10 @@
 这是一个基于 dart_gdbc 规范下，nebula-graph 图数据库的 dart 客户端实现。（开发中）
 
 ## Usage
+```shell
+dart pub add nebula_dart_gdbc
+```
+
 ```dart
 // use driver
 

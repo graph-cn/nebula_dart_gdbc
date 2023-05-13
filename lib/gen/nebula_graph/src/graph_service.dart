@@ -55,7 +55,6 @@ class GraphServiceClient implements GraphService {
 
   Future<AuthResponse> authenticate(
       Int8List username, Int8List password) async {
-    print('authenticate');
     oprot.writeMessageBegin(
         new TMessage("authenticate", TMessageType.CALL, nextSeqid()));
     authenticate_args args = new authenticate_args();
@@ -96,7 +95,6 @@ class GraphServiceClient implements GraphService {
   }
 
   Future<ExecutionResponse> execute(int sessionId, Int8List stmt) async {
-    print('execute');
     oprot.writeMessageBegin(
         new TMessage("execute", TMessageType.CALL, nextSeqid()));
     execute_args args = new execute_args();
@@ -219,7 +217,6 @@ class GraphServiceClient implements GraphService {
 
   Future<VerifyClientVersionResp> verifyClientVersion(
       VerifyClientVersionReq? req) async {
-    print('verifyClientVersion');
     oprot.writeMessageBegin(
         new TMessage("verifyClientVersion", TMessageType.CALL, nextSeqid()));
     verifyClientVersion_args args = new verifyClientVersion_args();

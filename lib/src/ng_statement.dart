@@ -12,25 +12,22 @@ class NgStatement implements Statement {
   NgStatement(this._conn);
 
   @override
-  Future<bool> execute([String? gql]) async {
-    var rs = await executeQuery(gql);
+  Future<bool> execute({Map<String, dynamic>? params, String? gql}) async {
+    var rs = await executeQuery(gql: gql);
     return rs.success;
   }
 
   @override
-  Future<ResultSet> executeQuery([String? gql]) async {
-    ng.ExecutionResponse resp = await _conn.client.execute(
-        _conn._sessionId ?? 0, Int8List.fromList(utf8.encode(gql ?? '')));
-    if (resp.error_code == ng.ErrorCode.SUCCEEDED) {
-      return handleResult(resp, _conn.timezoneOffset);
-    } else {
-      print(utf8.decode(resp.error_msg ?? []));
-      throw GdbcQueryException(message: utf8.decode(resp.error_msg ?? []));
+  Future<ResultSet> executeQuery(
+      {Map<String, dynamic>? params, String? gql}) async {
+    if (gql == null) {
+      throw GdbcQueryException(message: 'gql is null');
     }
+    return await _conn.executeQuery(gql, params: params);
   }
 
   @override
-  Future<int> executeUpdate(String? gql) {
+  Future<int> executeUpdate({Map<String, dynamic>? params, String? gql}) {
     // TODO: implement executeUpdate
     throw UnimplementedError();
   }

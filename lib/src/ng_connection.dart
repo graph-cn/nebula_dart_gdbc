@@ -24,6 +24,7 @@ part of nebula_dart_gdbc;
 /// ```
 class NgConnection implements Connection {
   static const String timeoutKey = 'timeout';
+  static const String spaceKey = 'space';
 
   late ng.TSocketTransport socketTransport;
   late ng.TFramedTransport transport;
@@ -33,6 +34,7 @@ class NgConnection implements Connection {
   int? _sessionId;
   int? timezoneOffset;
   int timeout = 0;
+  String? space;
 
   /// Invoked in [DriverManager.getConnection],
   /// you should not call this method directly.
@@ -67,6 +69,11 @@ class NgConnection implements Connection {
     /// check the version of client and server
     await verifyVersion();
     await authencate();
+
+    if (properties.containsKey(spaceKey)) {
+      space = properties[spaceKey];
+      await executeQuery('USE $space');
+    }
   }
 
   /// check the version of client and server
@@ -119,13 +126,27 @@ class NgConnection implements Connection {
   }
 
   @override
-  Future<ResultSet> executeQuery(String gql) async {
-    return await NgStatement(this).executeQuery(gql);
+  Future<ResultSet> executeQuery(String gql,
+      {Map<String, dynamic>? params}) async {
+    var sessionId = _sessionId ?? 0;
+    var stmtBytes = Int8List.fromList(utf8.encode(gql));
+    ng.ExecutionResponse resp = params == null
+        ? await client.execute(sessionId, stmtBytes)
+        : await client.executeWithParameter(
+            sessionId,
+            stmtBytes,
+            _convertParams(params),
+          );
+    if (resp.error_code == ng.ErrorCode.SUCCEEDED) {
+      return handleResult(resp, timezoneOffset);
+    } else {
+      throw GdbcQueryException(message: resp.error_msg?.utf8String());
+    }
   }
 
   @override
   Future<int> executeUpdate(String gql) async {
-    return await NgStatement(this).executeUpdate(gql);
+    return await NgStatement(this).executeUpdate(gql: gql);
   }
 
   @override
@@ -145,14 +166,17 @@ class NgConnection implements Connection {
   }
 
   @override
-  Future<PreparedStatement> prepareStatement(String gql) async {
-    return NgPreparedStatement(this);
+  Future<PreparedStatement> prepareStatement(
+    String gql, {
+    String Function(String, Map<String, dynamic>?)? render,
+  }) async {
+    return NgPreparedStatement(this, gql: gql, render: render);
   }
 
   @override
   Future<PreparedStatement> prepareStatementWithParameters(
       String gql, List<ParameterMetaData> parameters) async {
-    return NgPreparedStatement(this, parameters: parameters);
+    return NgPreparedStatement(this, parameters: parameters, gql: gql);
   }
 
   @override
@@ -163,5 +187,50 @@ class NgConnection implements Connection {
   @override
   Future<void> setAutoCommit(bool autoCommit) {
     throw DbFeatureException('No support for setAutoCommit');
+  }
+
+  Map<Int8List, ng.Value> _convertParams(Map<String, dynamic>? params) {
+    if (params == null) return <Int8List, ng.Value>{};
+    return params.map((key, value) {
+      return MapEntry(key.bytes, _convertParam(value));
+    });
+  }
+
+  ng.Value _convertParam(value) {
+    if (value == null) {
+      return ng.Value()..nVal = 0;
+    } else if (value is int) {
+      return ng.Value()..iVal = value;
+    } else if (value is double) {
+      return ng.Value()..fVal = value;
+    } else if (value is bool) {
+      return ng.Value()..bVal = value;
+    } else if (value is String) {
+      return ng.Value()..sVal = value.utf8code;
+    } else if (value is List) {
+      return ng.Value()
+        ..lVal = (ng.NList()..values = value.map(_convertParam).toList());
+    } else if (value is Set) {
+      return ng.Value()
+        ..uVal = (ng.NSet()..values = value.map(_convertParam).toSet());
+    } else if (value is Map<String, dynamic>) {
+      return ng.Value()..mVal = (ng.NMap()..kvs = _convertParams(value));
+    } else {
+      if (value.toJson is! Map<String, dynamic> Function()) {
+        throw GdbcQueryException(
+          message:
+              '''Unsupported type: ${value.runtimeType}, you can define a toJson method for it. such as:
+              Map<String, dynamic> toJson() {
+                return {
+                  'name': name,
+                  'age': age,
+                };
+              }
+              ''',
+        );
+      }
+      Map<String, dynamic> jsonValue = value.toJson();
+      return _convertParam(jsonValue);
+    }
   }
 }

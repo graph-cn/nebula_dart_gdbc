@@ -582,10 +582,6 @@ ng.DataSet createDs(Map<String, dynamic> data) {
   return ds;
 }
 
-extension StringExt on String {
-  Int8List get bytes => Int8List.fromList(codeUnits);
-}
-
 Map<Type, ng.Value Function(dynamic)> tr = {
   String: (v) => ng.Value()..sVal = (v as String).bytes,
   int: (v) => ng.Value()..iVal = v,

@@ -15,3 +15,6 @@ part 'src/ng_prepared_statement.dart';
 part 'src/ng_result_set.dart';
 part 'src/ng_result_set_meta_data.dart';
 part 'src/ng_result_handler.dart';
+
+part 'src/ext/string_ext.dart';
+part 'src/ext/int8list_ext.dart';

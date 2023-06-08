@@ -1,0 +1,3 @@
+[submodule "deps/dart_gdbc"]
+	path = deps/dart_gdbc
+	url = https://github.com/graph-cn/dart_gdbc.git

@@ -454,6 +454,7 @@ void main() {
               ..hour = now.hour
               ..minute = now.minute
               ..sec = now.second
+              // TODO check why there are  no milliseconds in nebula
               ..microsec = now.microsecond)
         ]
       ]
@@ -469,7 +470,7 @@ void main() {
           now.hour,
           now.minute,
           now.second,
-          now.millisecond,
+          // now.millisecond,
           now.microsecond,
         ),
         result);

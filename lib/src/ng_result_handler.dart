@@ -49,11 +49,11 @@ Map<GdbTypes, bool Function(dynamic)> typeGetter = {
   GdbTypes.unknown: (v) => true,
 };
 
-Map<
-        GdbTypes,
-        dynamic Function(
-            dynamic, ValueMetaData, int?, String? Function(int, dynamic)? nget)>
-    typeHandler = {
+typedef NameGetter = String? Function(int, dynamic)?;
+typedef TypeHandler = dynamic Function(
+    dynamic, ValueMetaData, int?, NameGetter);
+
+Map<GdbTypes, TypeHandler> typeHandler = {
   GdbTypes.none: (v, m, t, nget) => null,
   GdbTypes.prop: (v, m, t, nget) => _handleProp(v, m, t),
   GdbTypes.node: (v, m, t, nget) =>
@@ -218,7 +218,7 @@ dynamic _handleValue(
   int? timezoneOffset, {
   ValueMetaData? parent,
   List? parentVal,
-  String? Function(int, dynamic)? nameGetter,
+  NameGetter? nameGetter,
 }) {
   var type = typeGetter.entries.firstWhere((getter) => getter.value(v)).key;
   meta.type = type;
@@ -295,21 +295,26 @@ _handlePolygon(ng.Polygon v, ValueMetaData meta) {
   ];
 }
 
-String? _idxName(p1, dynamic v) => '$p1';
+// NameGetter _idxName = (p1, dynamic v) => '$p1';
+NameGetter _itemName = (p1, dynamic v) => 'item';
+
 _handleSet(ng.NSet v, ValueMetaData meta, int? timezoneOffset,
-    [String? Function(int p1, dynamic p2)? nget]) {
+    [NameGetter? nget]) {
   return _handleList(v.values?.toList() ?? [], meta, timezoneOffset, nget);
 }
 
 _handleList(List<dynamic> values, ValueMetaData meta, int? timezoneOffset,
-    [String? Function(int p1, dynamic p2)? nget]) {
-  nget ??= _idxName;
+    [NameGetter? nget]) {
+  nget ??= _itemName;
   var list = <dynamic>[];
+  ValueMetaData valueMeta = meta.submetas.isEmpty
+      ? (ValueMetaData()
+        ..name = 'item'
+        ..type = GdbTypes.unknown)
+      : meta.submetas.first;
   for (var v in values) {
-    ValueMetaData valueMeta = ValueMetaData()
-      ..name = nget(values.indexOf(v), v)
-      ..type = GdbTypes.unknown;
-    _handleValue(v, valueMeta, timezoneOffset, parent: meta, parentVal: list);
+    var val = _handleValue(v, valueMeta, timezoneOffset, parent: meta);
+    list.add(val);
   }
   return list;
 }

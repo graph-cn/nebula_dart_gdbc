@@ -52,9 +52,11 @@ class NgConnection implements Connection {
     );
 
     transport = ng.THeaderTransport(
-        transport: socketTransport,
-        clientTypes: [ng.ClientTypes.HEADERS],
-        supportedClients: [false]);
+      transport: socketTransport,
+      clientTypes: [ng.ClientTypes.HEADERS],
+      supportedClients: [false],
+      maxLength: 4194304,
+    );
 
     protocol = ng.THeaderProtocol(transport);
     client = ng.GraphServiceClient(protocol);

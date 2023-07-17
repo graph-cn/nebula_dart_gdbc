@@ -19,7 +19,6 @@ class NgDriver extends Driver {
     address.queryParameters.forEach((key, value) {
       properties![key] = value;
     });
-    print(properties);
     var conn = NgConnection._create(address, properties: properties);
     await conn._open();
     return conn;

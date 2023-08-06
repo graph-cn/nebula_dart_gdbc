@@ -116,6 +116,7 @@ class NgConnection implements Connection {
 
   @override
   Future<void> close() async {
+    await client.signout(_sessionId ?? 0);
     await transport.close();
   }
 

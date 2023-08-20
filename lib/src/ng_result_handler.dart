@@ -87,7 +87,7 @@ Map<GdbTypes, TypeHandler> typeHandler = {
   GdbTypes.polygon: (v, m, t, nget) => _handlePolygon(v, m),
 
   // must at last
-  GdbTypes.unknown: (v, m, t, nget) => v,
+  GdbTypes.unknown: (v, m, t, nget) => null,
 };
 
 handleDataSet(ng.DataSet? dataSet, ValueMetaData meta, int? timezoneOffset) {

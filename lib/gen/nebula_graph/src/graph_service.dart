@@ -91,7 +91,7 @@ class GraphServiceClient implements GraphService {
     args.write(oprot);
     oprot.writeMessageEnd();
 
-    await oprot.trans_.flush();
+    await oprot.trans_.flush(true);
   }
 
   Future<ExecutionResponse> execute(int sessionId, Int8List stmt) async {

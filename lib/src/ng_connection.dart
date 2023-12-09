@@ -2,7 +2,7 @@
 //
 // This source code is licensed under Apache 2.0 License.
 
-part of nebula_dart_gdbc;
+part of "../nebula_dart_gdbc.dart";
 
 /// Create by [DriverManager.getConnection]
 ///

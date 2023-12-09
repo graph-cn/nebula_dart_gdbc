@@ -2,7 +2,7 @@
 //
 // This source code is licensed under Apache 2.0 License.
 
-part of '../nebula_dart_gdbc.dart';
+part of "../nebula_dart_gdbc.dart";
 
 class NgResultSet extends ResultSet {
   @override

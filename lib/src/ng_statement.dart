@@ -4,7 +4,7 @@
 
 // ignore_for_file: prefer_final_fields
 
-part of nebula_dart_gdbc;
+part of "../nebula_dart_gdbc.dart";
 
 class NgStatement implements Statement {
   NgConnection _conn;

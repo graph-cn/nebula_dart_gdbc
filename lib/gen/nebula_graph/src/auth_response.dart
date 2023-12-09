@@ -9,7 +9,6 @@
 library nebula_graph.src.auth_response;
 
 import 'dart:typed_data' show Int8List;
-import 'package:fbthrift/fbthrift.dart';
 import 'package:nebula_dart_gdbc/gen/nebula_graph/nebula_graph.dart';
 import 'package:nebula_dart_gdbc/gen/nebula/nebula.dart' as t_nebula;
 

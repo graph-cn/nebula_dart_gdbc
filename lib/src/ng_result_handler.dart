@@ -11,7 +11,41 @@ NgResultSet handleResult(ng.ExecutionResponse rs, int? timezoneOffset) {
     ..success = rs.error_code == ng.ErrorCode.SUCCEEDED
     ..rows = rows ?? []
     ..metas = meta.submetas;
+  handleExecutionPlan(rs, result);
   return result;
+}
+
+dynamic handleExecutionPlan(ng.ExecutionResponse rs, NgResultSet result) {
+  ng.PlanDescription? desc = rs.plan_desc;
+  if (desc == null) return;
+
+  ExecutionPlan plan = ExecutionPlan()
+    ..format = desc.format?.utf8String()
+    ..nodeIndexMap = desc.node_index_map
+    ..optimizeTimeInUs = desc.optimize_time_in_us
+    ..nodes = desc.plan_node_descs?.map((e) {
+      ExecutionPlanNode node = ExecutionPlanNode()
+        ..id = e.id
+        ..name = e.name?.utf8String()
+        ..dependencies = e.dependencies
+        ..description = e.description?.map((e) {
+          return ExecutionPlanNodeDesc(
+              name: e.key?.utf8String(), value: e.value?.utf8String());
+        }).toList()
+        ..outputVar = e.output_var?.utf8String()
+        ..profiles = e.profiles?.map((e) {
+          return ExecutionPlanNodeProfile()
+            ..rows = e.rows
+            ..execDurationInUs = e.exec_duration_in_us
+            ..totalDurationInUs = e.total_duration_in_us
+            ..otherStats = e.other_stats?.map((key, value) {
+              return MapEntry(key.utf8String(), value.utf8String());
+            });
+        }).toList();
+      return node;
+    }).toList();
+
+  result.plan = plan;
 }
 
 Map<GdbTypes, bool Function(dynamic)> typeGetter = {

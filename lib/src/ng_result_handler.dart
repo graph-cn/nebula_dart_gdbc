@@ -49,7 +49,7 @@ dynamic handleExecutionPlan(ng.ExecutionResponse rs, NgResultSet result) {
 }
 
 Map<GdbTypes, bool Function(dynamic)> typeGetter = {
-  GdbTypes.none: (v) => (v is ng.Value && v.nVal == 0) || v == null,
+  GdbTypes.none: (v) => (v is ng.Value && v.isSetNVal()) || v == null,
   GdbTypes.prop: (v) => v is Map<Int8List, ng.Value>,
   GdbTypes.node: (v) => v is ng.Vertex || (v is ng.Value && v.vVal != null),
   GdbTypes.relationship: (v) => v is ng.Value && v.eVal != null,
@@ -88,7 +88,7 @@ typedef TypeHandler = dynamic Function(
     dynamic, ValueMetaData, int?, NameGetter);
 
 Map<GdbTypes, TypeHandler> typeHandler = {
-  GdbTypes.none: (v, m, t, nget) => null,
+  GdbTypes.none: (v, m, t, nget) => ng.NullType.VALUES_TO_NAMES[v?.nVal],
   GdbTypes.prop: (v, m, t, nget) => _handleProp(v, m, t),
   GdbTypes.node: (v, m, t, nget) =>
       _handleNode(v is ng.Vertex ? v : v.vVal, m, t),

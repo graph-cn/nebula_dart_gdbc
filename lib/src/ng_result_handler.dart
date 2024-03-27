@@ -88,7 +88,8 @@ typedef TypeHandler = dynamic Function(
     dynamic, ValueMetaData, int?, NameGetter);
 
 Map<GdbTypes, TypeHandler> typeHandler = {
-  GdbTypes.none: (v, m, t, nget) => ng.NullType.VALUES_TO_NAMES[v?.nVal],
+  GdbTypes.none: (v, m, t, nget) =>
+      v?.nVal == 0 ? null : ng.NullType.VALUES_TO_NAMES[v?.nVal],
   GdbTypes.prop: (v, m, t, nget) => _handleProp(v, m, t),
   GdbTypes.node: (v, m, t, nget) =>
       _handleNode(v is ng.Vertex ? v : v.vVal, m, t),

@@ -274,6 +274,7 @@ DateTime _handleDateTime(
     v.hour + (timezoneOffset ?? 0),
     v.minute,
     v.sec,
+    0,
     v.microsec,
   );
 }

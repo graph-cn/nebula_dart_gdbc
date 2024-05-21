@@ -279,8 +279,10 @@ DateTime _handleDateTime(
   );
 }
 
+/// 为保持毫秒数一致，因此起点取计算机的纪元时间，即 0 时刻。
+/// 在终端，需要完成值的截取，只取时刻值，不取日期值
 DateTime _handleTime(ng.Time v, ValueMetaData meta, int? timezoneOffset) {
-  return DateTime(v.hour, v.minute, v.sec, v.microsec);
+  return DateTime(1970, 1, 1, v.hour, v.minute, v.sec, 0, v.microsec);
 }
 
 DateTime _handleDate(ng.Date v, ValueMetaData meta, int? timezoneOffset) {

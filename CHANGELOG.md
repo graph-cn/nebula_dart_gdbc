@@ -1,3 +1,6 @@
+## 0.0.4
+- Feat: Add timestamp type in dart_gdbc ( upgrade to v0.0.4 ).
+
 ## 0.0.3+4
 - 修复：获取 Time 类型的值错误问题
 

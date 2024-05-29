@@ -1,3 +1,6 @@
+## 0.0.4+1
+- fix: path data processing errors.
+
 ## 0.0.4
 - Feat: Add timestamp type in dart_gdbc ( upgrade to v0.0.4 ).
 

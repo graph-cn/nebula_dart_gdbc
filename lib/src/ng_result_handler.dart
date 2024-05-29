@@ -215,23 +215,50 @@ List<dynamic> _handleRelationship(
   return edgeData;
 }
 
+/// Due to the large differences in the probability of meta in the multi row data of the path.
+/// <br>Therefore, the meta of each row of data is stored separately and no longer separated into a unified vertical column
+///
+/// 由于 path 的多行数据在大概率上，meta 存在很大的差异
+/// <br>因此，每行数据的 meta 单独存储，不再抽离成统一的纵向栏位
 _handlePath(ng.Path path, ValueMetaData meta, int? timezoneOffset) {
+  /// 列转行，数据解析时，需按行的逻辑进行解析
+  var pathMeta = ValueMetaData()..type = GdbTypes.list;
+
   var pathData = <dynamic>[];
 
-  ValueMetaData startNode = ValueMetaData()..name = MetaKey.startNode;
+  ValueMetaData startNode = ValueMetaData()..name = '0';
   _handleValue(path.src!, startNode, timezoneOffset,
-      parent: meta, parentVal: pathData);
+      parent: pathMeta, parentVal: pathData);
 
-  ValueMetaData steps = ValueMetaData();
-  _handleValue(
-    path.steps,
-    steps,
-    timezoneOffset,
-    parent: meta,
-    parentVal: pathData,
-    nameGetter: (idx, step) => ((step as ng.Step).name?.utf8String()),
-  );
-  return pathData;
+  path.steps?.forEach((element) {});
+  var srcId = path.src?.vid;
+  for (var i = 0; i < (path.steps?.length ?? 0); i++) {
+    var step = path.steps?[i];
+
+    ValueMetaData edgeMeta = ValueMetaData();
+    var edge = ng.Value()
+      ..eVal = (ng.Edge()
+        ..name = step?.name
+        ..src = srcId
+        ..ranking = step?.ranking ?? 0
+        ..dst = step?.dst?.vid
+        ..props = step?.props);
+
+    _handleValue(edge, edgeMeta, timezoneOffset,
+        parent: pathMeta, parentVal: pathData);
+
+    ValueMetaData endNodeMeta = ValueMetaData()
+      ..name = '${MetaKey.endNode}${i + 1}';
+    _handleValue(step?.dst, endNodeMeta, timezoneOffset,
+        parent: pathMeta, parentVal: pathData);
+    srcId = step?.dst?.vid;
+    edgeMeta.name = '${i + 1}';
+    endNodeMeta.name = '${i + 1}';
+  }
+  var result = NgResultSet()
+    ..metas = pathMeta.submetas
+    ..rows = [pathData];
+  return result;
 }
 
 _handleStep(ng.Step v, ValueMetaData meta, int? timezoneOffset) {

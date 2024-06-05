@@ -1,3 +1,6 @@
+## 0.0.4+2
+- fix: when the time zone of the database is set, fix the unit issue of offset (hours ->sec)
+
 ## 0.0.4+1
 - fix: path data processing errors.
 

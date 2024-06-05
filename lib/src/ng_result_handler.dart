@@ -298,9 +298,9 @@ DateTime _handleDateTime(
     v.year,
     v.month,
     v.day,
-    v.hour + (timezoneOffset ?? 0),
+    v.hour,
     v.minute,
-    v.sec,
+    v.sec + (timezoneOffset ?? 0),
     0,
     v.microsec,
   );
@@ -309,11 +309,19 @@ DateTime _handleDateTime(
 /// 为保持毫秒数一致，因此起点取计算机的纪元时间，即 0 时刻。
 /// 在终端，需要完成值的截取，只取时刻值，不取日期值
 DateTime _handleTime(ng.Time v, ValueMetaData meta, int? timezoneOffset) {
-  return DateTime(1970, 1, 1, v.hour, v.minute, v.sec, 0, v.microsec);
+  return DateTime(1970, 1, 1, v.hour, v.minute, v.sec + (timezoneOffset ?? 0),
+      0, v.microsec);
 }
 
 DateTime _handleDate(ng.Date v, ValueMetaData meta, int? timezoneOffset) {
-  return DateTime(v.year, v.month, v.day, (timezoneOffset ?? 0));
+  // ? 当前时间 UTC+8 2024-06-05 21:37，
+  // ? 数据库时区为 UTC+12，
+  // ? 系统时间为：2024-06-06 01:37，
+  // ? 调用 date() 结果值为 2024-06-05
+  // ? 确认是否是一个来自数据库的误差
+  // var tzTime = DateTime(v.year, v.month, v.day, 12, 0, (timezoneOffset ?? 0));
+  // return DateTime(tzTime.year, tzTime.month, tzTime.day);
+  return DateTime(v.year, v.month, v.day);
 }
 
 Duration _handleDuration(

@@ -1,3 +1,7 @@
+## 0.0.4+4
+- fix: 修复 meta 名称为中文时，无法获取到数据的问题
+> fix: When the meta name is Chinese, the data cannot be obtained
+
 ## 0.0.4+3
 - fix: when the data is not a standard utf8 string, an error occurs.
 

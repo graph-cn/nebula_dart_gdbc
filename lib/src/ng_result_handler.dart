@@ -135,7 +135,7 @@ handleDataSet(ng.DataSet? dataSet, ValueMetaData meta, int? timezoneOffset) {
     cols
             ?.map(
               (e) => ValueMetaData()
-                ..name = utf8.decode(e)
+                ..name = e.utf8String()
                 ..type = GdbTypes.unknown,
             )
             .toList() ??

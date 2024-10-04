@@ -136,7 +136,7 @@ handleDataSet(ng.DataSet? dataSet, ValueMetaData meta, int? timezoneOffset) {
             ?.map(
               (e) => ValueMetaData()
                 ..name = e.utf8String()
-                ..type = GdbTypes.unknown,
+                ..type = GdbTypes.dataSet,
             )
             .toList() ??
         [],
@@ -194,9 +194,23 @@ List<dynamic> _handleNode(
 List<dynamic> _handleRelationship(
     ng.Edge v, ValueMetaData meta, int? timezoneOffset) {
   var edgeData = [];
+
+  // 方向性，是否为正向
+  var isForward = v.type > 0;
   ValueMetaData startNodeId = ValueMetaData()..name = MetaKey.startId;
-  _handleValue(v.src, startNodeId, timezoneOffset,
-      parent: meta, parentVal: edgeData);
+  ValueMetaData endNodeId = ValueMetaData()..name = MetaKey.endId;
+
+  addSrc() {
+    _handleValue(v.src, isForward ? startNodeId : endNodeId, timezoneOffset,
+        parent: meta, parentVal: edgeData);
+  }
+
+  addDst() {
+    _handleValue(v.dst, isForward ? endNodeId : startNodeId, timezoneOffset,
+        parent: meta, parentVal: edgeData);
+  }
+
+  isForward ? addSrc() : addDst();
 
   ValueMetaData idMeta = ValueMetaData()
     ..name = MetaKey.relationshipId
@@ -204,9 +218,7 @@ List<dynamic> _handleRelationship(
   _handleValue(ng.Value()..iVal = v.ranking, idMeta, timezoneOffset,
       parent: meta, parentVal: edgeData);
 
-  ValueMetaData endNodeId = ValueMetaData()..name = MetaKey.endId;
-  _handleValue(v.dst, endNodeId, timezoneOffset,
-      parent: meta, parentVal: edgeData);
+  isForward ? addDst() : addSrc();
 
   ValueMetaData edgeMeta = ValueMetaData()..name = v.name?.utf8String();
   _handleValue(v.props, edgeMeta, timezoneOffset,

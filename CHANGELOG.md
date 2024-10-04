@@ -1,3 +1,7 @@
+## 0.0.4+6
+- fix: 修复关系的方向性问题，使 _srcId 与 _dstId 两个栏位的值符合方向性.
+  > - fix: Fix the directionality problem of the relationship, so that the values of the two columns _srcId and _dstId conform to the directionality.
+
 ## 0.0.4+5
 - chore: upgrade dependencies.
 

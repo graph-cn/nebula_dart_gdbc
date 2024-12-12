@@ -8,10 +8,10 @@ environment:
 
 dependencies:
   fbthrift: ^1.0.0+4
-  dart_gdbc: ^0.0.4+1
-  dart_gdbc_pool: ^0.0.4+1
-  # dart_gdbc: 
-  #   path: ../../
+  # dart_gdbc: ^0.0.4+1
+  # dart_gdbc_pool: ^0.0.4+1
+  dart_gdbc: 
+    path: ../../
   # dart_gdbc_pool: 
   #   path: ../pool/dart_gdbc_pool
 

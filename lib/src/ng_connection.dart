@@ -36,6 +36,12 @@ class NgConnection implements Connection {
   int timeout = 0;
   String? space;
 
+  @override
+  String? get databaseName => space;
+
+  @override
+  String? version;
+
   /// Invoked in [DriverManager.getConnection],
   /// you should not call this method directly.
   /// Because connection is not open yet.

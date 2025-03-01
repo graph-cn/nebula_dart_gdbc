@@ -348,36 +348,37 @@ Duration _handleDuration(
   );
 }
 
-_handleGeo(ng.Geography v, ValueMetaData meta) {
-  if (v.isSetLsVal()) {
-    return v.lsVal;
+_handleGeo(ng.Value? v, ValueMetaData meta) {
+  ng.Geography? geo = v?.ggVal;
+  if (geo == null) return null;
+  if (geo.isSetLsVal()) {
+    return _handleLine(geo.lsVal, meta);
   }
-  if (v.isSetPtVal()) {
-    return v.ptVal;
+  if (geo.isSetPtVal()) {
+    return _handlePoint(geo.ptVal, meta);
   }
-  if (v.isSetPgVal()) {
-    return v.pgVal;
+  if (geo.isSetPgVal()) {
+    return _handlePolygon(geo.pgVal, meta);
   }
   return v;
 }
 
-_handlePoint(ng.Point v, ValueMetaData meta) {
-  return <dynamic>[v.coord?.x, v.coord?.y, null];
+_handlePoint(ng.Point? v, ValueMetaData meta) {
+  if (v == null) return null;
+  return <dynamic>[v.coord?.x, v.coord?.y];
 }
 
-_handleLine(ng.LineString v, ValueMetaData meta) {
-  return <List<dynamic>>[
-    v.coordList?.map((e) => [e.x, e.y, null]).toList() ?? []
-  ];
+List<List<dynamic>>? _handleLine(ng.LineString? v, ValueMetaData meta) {
+  if (v == null) return null;
+  return v.coordList?.map((e) => [e.x, e.y]).toList() ?? [];
 }
 
-_handlePolygon(ng.Polygon v, ValueMetaData meta) {
-  return <List<List<dynamic>>>[
-    v.coordListList
-            ?.map((e) => e.map((e) => [e.x, e.y, null]).toList())
-            .toList() ??
-        []
-  ];
+List<List<dynamic>>? _handlePolygon(ng.Polygon? v, ValueMetaData meta) {
+  if (v == null) return null;
+  return v.coordListList
+          ?.map((e) => e.map((e) => [e.x, e.y]).toList())
+          .toList() ??
+      [];
 }
 
 // NameGetter _idxName = (p1, dynamic v) => '$p1';

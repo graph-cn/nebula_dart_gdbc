@@ -1,6 +1,6 @@
 name: nebula_dart_gdbc
 description: A database driver for nebula graph based on dart_gdbc, help you to access nebula graph in dart language
-version:  0.0.4+6
+version:  0.0.5
 repository: https://github.com/graph-cn/nebula_dart_gdbc
 
 environment:
@@ -8,10 +8,10 @@ environment:
 
 dependencies:
   fbthrift: ^1.0.0+4
-  # dart_gdbc: ^0.0.4+1
+  dart_gdbc: ^0.0.5
   # dart_gdbc_pool: ^0.0.4+1
-  dart_gdbc: 
-    path: ../../
+  # dart_gdbc: 
+  #   path: ../../
   # dart_gdbc_pool: 
   #   path: ../pool/dart_gdbc_pool
 

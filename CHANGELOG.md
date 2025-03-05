@@ -1,3 +1,9 @@
+## 0.0.5
+- feat: NgConnection 支持 databaseName 参数与 version 参数
+  > - feat: NgConnection supports databaseName parameter and version parameter
+- fix: 修复 geo 类型的数据解析问题
+  > - fix: Fix the data parsing problem of the geo type
+
 ## 0.0.4+6
 - fix: 修复关系的方向性问题，使 _srcId 与 _dstId 两个栏位的值符合方向性.
   > - fix: Fix the directionality problem of the relationship, so that the values of the two columns _srcId and _dstId conform to the directionality.

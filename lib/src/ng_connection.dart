@@ -61,7 +61,7 @@ class NgConnection implements Connection {
       transport: socketTransport,
       clientTypes: [ng.ClientTypes.HEADERS],
       supportedClients: [false],
-      maxLength: 4194304,
+      maxLength: 2147483647,
     );
 
     protocol = ng.THeaderProtocol(transport);

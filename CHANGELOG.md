@@ -1,3 +1,9 @@
+## 0.0.5+1
+- fix: 修复 INT64 在超出 4611686018427387904 时的值溢出问题。
+  > - fix: the value overflow problem when INT64 exceeds 4611686018427387904.
+- fix: 接收包的数据帧最大长度设置为 fbthrift 默认的 2147483647.
+  > - fix: The maximum length of the data frame of the received packet is set to the default 2147483647 of fbthrift.
+
 ## 0.0.5
 - feat: NgConnection 支持 databaseName 参数与 version 参数
   > - feat: NgConnection supports databaseName parameter and version parameter

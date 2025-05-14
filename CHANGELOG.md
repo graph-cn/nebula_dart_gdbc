@@ -1,3 +1,7 @@
+## 0.0.5+2
+- fix: 升级依赖，修复脚本写入时，缓存区长度不足的问题
+  > - fix: Upgrade dependencies to fix the problem of insufficient buffer length when writing scripts.
+
 ## 0.0.5+1
 - fix: 修复 INT64 在超出 4611686018427387904 时的值溢出问题。
   > - fix: the value overflow problem when INT64 exceeds 4611686018427387904.

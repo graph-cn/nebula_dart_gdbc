@@ -40,6 +40,9 @@ class NgConnection implements Connection {
   String? get databaseName => space;
 
   @override
+  Function()? onClose;
+
+  @override
   String? version;
 
   /// Invoked in [DriverManager.getConnection],
@@ -49,7 +52,8 @@ class NgConnection implements Connection {
   /// 通过 [DriverManager.getConnection] 调用，
   /// 不应该直接调用这个方法。
   /// 因为连接还没有打开。
-  NgConnection._create(Uri address, {Map<String, dynamic>? properties}) {
+  NgConnection._create(Uri address,
+      {Map<String, dynamic>? properties, this.onClose}) {
     this.properties = properties ?? <String, dynamic>{};
     socketTransport = ng.TSocketTransport(
       host: address.host,
@@ -124,6 +128,7 @@ class NgConnection implements Connection {
   Future<void> close() async {
     await client.signout(_sessionId ?? 0);
     await transport.close();
+    onClose?.call();
   }
 
   @override

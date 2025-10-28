@@ -67,7 +67,6 @@ Map<GdbTypes, bool Function(dynamic)> typeGetter = {
   GdbTypes.double: (v) => v is ng.Value && v.fVal != null,
 
   GdbTypes.string: (v) => v is ng.Value && v.sVal != null,
-  GdbTypes.bytes: (v) => v is ng.Value && v.bVal != null,
 
   GdbTypes.date: (v) => v is ng.Value && v.dVal != null,
   GdbTypes.time: (v) => v is ng.Value && v.tVal != null,
@@ -242,7 +241,6 @@ _handlePath(ng.Path path, ValueMetaData meta, int? timezoneOffset) {
   _handleValue(path.src!, startNode, timezoneOffset,
       parent: pathMeta, parentVal: pathData);
 
-  path.steps?.forEach((element) {});
   var srcId = path.src?.vid;
   for (var i = 0; i < (path.steps?.length ?? 0); i++) {
     var step = path.steps?[i];
@@ -254,7 +252,8 @@ _handlePath(ng.Path path, ValueMetaData meta, int? timezoneOffset) {
         ..src = srcId
         ..ranking = step?.ranking ?? 0
         ..dst = step?.dst?.vid
-        ..props = step?.props);
+        ..props = step?.props
+        ..type = step?.type ?? 1);
 
     _handleValue(edge, edgeMeta, timezoneOffset,
         parent: pathMeta, parentVal: pathData);

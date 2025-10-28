@@ -305,6 +305,191 @@ void main() {
     expectAll([0, 1, 0, 1, 2], GdbTypes.int, 'testPropName3', 23, result);
   });
 
+  test('Test Path List', () {
+    var data = <String, dynamic>{
+      'columns': ['p'],
+      'rows': [
+        [
+          {
+            fnKey: path,
+            'startNode': {
+              fnKey: vertex,
+              'id': 1,
+              'tags': [
+                {
+                  'name': 'startNodeTagName',
+                  'props': {'startProp1': 11, 'startProp2': '12'}
+                }
+              ]
+            },
+            'steps': [
+              {
+                fnKey: step,
+                "name": "testStepName",
+                'endNode': {
+                  fnKey: vertex,
+                  'id': 3,
+                  'tags': [
+                    {
+                      'name': 'testTagName',
+                      'props': {'testPropName': 31}
+                    }
+                  ]
+                },
+                'ranking': 29,
+                'props': {
+                  'testPropName': 21,
+                  'testPropName2': '22',
+                  'testPropName3': 23
+                },
+              }
+            ],
+          }
+        ],
+        [
+          {
+            fnKey: path,
+            'startNode': {
+              fnKey: vertex,
+              'id': 4,
+              'tags': [
+                {
+                  'name': 'startNodeTagName',
+                  'props': {'startProp1': 14, 'startProp2': '15'}
+                }
+              ]
+            },
+            'steps': [
+              {
+                fnKey: step,
+                "name": "testStepName",
+                'endNode': {
+                  fnKey: vertex,
+                  'id': 5,
+                  'tags': [
+                    {
+                      'name': 'testTagName',
+                      'props': {'testPropName': 54}
+                    }
+                  ]
+                },
+                'ranking': 59,
+                'props': {
+                  'testPropName': 55,
+                  'testPropName2': '56',
+                  'testPropName3': 57
+                },
+              },
+              {
+                fnKey: step,
+                "name": "testStepName",
+                'endNode': {
+                  fnKey: vertex,
+                  'id': 6,
+                  'tags': [
+                    {
+                      'name': 'testTagName',
+                      'props': {'testPropName': 64}
+                    }
+                  ]
+                },
+                'ranking': 69,
+                'props': {
+                  'testPropName': 65,
+                  'testPropName2': '66',
+                  'testPropName3': 67
+                },
+              }
+            ],
+          }
+        ]
+      ]
+    };
+
+    ng.DataSet ds = createDs(data);
+    ResultSet result = handleRoot(ds, null, null);
+    print(result);
+
+    expectAll([0], GdbTypes.path, 'p', null, result);
+    expectAll(
+      [0, 0],
+      GdbTypes.dataSet,
+      null,
+      [
+        [
+          // startNode
+          1,
+          [11, '12']
+        ],
+        [
+          // edge
+          1,
+          29,
+          3,
+          [21, '22', 23]
+        ],
+        [
+          // endNode
+          3,
+          [31]
+        ]
+      ],
+      result,
+    );
+    expectAll(
+      [0, 0],
+      GdbTypes.dataSet,
+      null,
+      [
+        [
+          [
+            [
+              4,
+              [14, 15]
+            ],
+            [
+              4,
+              59,
+              5,
+              [55, 56, 57]
+            ],
+            [
+              5,
+              [54]
+            ],
+            [
+              5,
+              69,
+              6,
+              [65, 66, 67]
+            ],
+            [
+              6,
+              [64]
+            ]
+          ]
+        ]
+      ],
+      result,
+    );
+    expectAll([0, 0, 0], GdbTypes.list, null, null, result);
+    expectAll([0, 0, 1], GdbTypes.list, null, null, result);
+    expectAll([0, 0, 0, 0], GdbTypes.node, '0', null, result);
+    expectAll([0, 0, 0, 0, 0], GdbTypes.int, MetaKey.nodeId, null, result);
+    expectAll([0, 0, 0, 0, 1], GdbTypes.prop, MetaKey.nodeId, null, result);
+
+    expectAll([0, 0, 0, 1], GdbTypes.relationship, '1', null, result);
+    expectAll([0, 0, 0, 1, 0], GdbTypes.int, MetaKey.startId, null, result);
+    expectAll(
+        [0, 0, 0, 1, 1], GdbTypes.int, MetaKey.relationshipId, null, result);
+    expectAll([0, 0, 0, 1, 2], GdbTypes.int, MetaKey.endId, null, result);
+    expectAll([0, 0, 0, 1, 3], GdbTypes.prop, "testStepName", null, result);
+
+    expectAll([0, 0, 0, 2], GdbTypes.node, '1', null, result);
+    expectAll([0, 0, 0, 2, 0], GdbTypes.int, MetaKey.nodeId, null, result);
+    expectAll([0, 0, 0, 2, 1], GdbTypes.prop, MetaKey.nodeId, null, result);
+  });
+
   // todo 修正 list 层级问题
   test('Test Subgraph', () {
     var data = <String, dynamic>{
@@ -467,10 +652,13 @@ void main() {
         GdbTypes.time,
         null,
         DateTime(
+          1970,
+          1,
+          1,
           now.hour,
           now.minute,
           now.second,
-          // now.millisecond,
+          0,
           now.microsecond,
         ),
         result);
@@ -529,6 +717,7 @@ ng.Step step(dynamic v) {
   var step = ng.Step()
     ..dst = vertex(v['endNode']).vVal
     ..name = (v['name'] as String).bytes
+    ..ranking = v['ranking'] as int
     ..props = Map.fromEntries(
       ((v['props']).entries as Iterable<MapEntry<String, dynamic>>).map(
         (e) {

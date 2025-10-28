@@ -1,3 +1,9 @@
+## 0.0.6
+
+- 在`Connection`类成员中添加`onClose`回调函数
+  > - Feat: Add `onClose` callback to `Connection` to allow custom cleanup logic when the connection is closed.
+
+
 ## 0.0.5+2
 - fix: 升级依赖，修复脚本写入时，缓存区长度不足的问题
   > - fix: Upgrade dependencies to fix the problem of insufficient buffer length when writing scripts.

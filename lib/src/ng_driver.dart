@@ -14,12 +14,17 @@ class NgDriver extends Driver {
   Future<Connection> connect(
     String url, {
     Map<String, dynamic>? properties,
+    Function()? onClose,
   }) async {
     var address = _parseURL(url);
     address.queryParameters.forEach((key, value) {
       properties![key] = value;
     });
-    var conn = NgConnection._create(address, properties: properties);
+    var conn = NgConnection._create(
+      address,
+      properties: properties,
+      onClose: onClose,
+    );
     await conn._open();
     return conn;
   }

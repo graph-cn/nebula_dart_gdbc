@@ -1,3 +1,8 @@
+## 0.0.6+1
+
+- chore: 升级 fbthrift 依赖到 1.0.0+7 版本，修复连接中断信息不友好的问题
+  > - chore: Upgrade fbthrift dependency to version 1.0.0+7, fixing unfriendly connection interruption messages.
+
 ## 0.0.6
 
 - 在`Connection`类成员中添加`onClose`回调函数

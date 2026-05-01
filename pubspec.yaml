@@ -10,9 +10,10 @@ dependencies:
   fbthrift: ^1.0.0+7
   # fbthrift:
   #   path: D:/work/dudu-ltd/nebula_dart/fbthrift
-  dart_gdbc: ^0.0.6
+  dart_gdbc: ^0.0.7
   # dart_gdbc: 
-  #   path: ../../
+  #   path: ../dart_gdbc
+  liquify: ^1.5.1
 
 dev_dependencies:
   lints: ^3.0.0

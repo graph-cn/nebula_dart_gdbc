@@ -22,7 +22,7 @@ part of "../nebula_dart_gdbc.dart";
 ///   password: 'nebula', // password is optional
 /// );
 /// ```
-class NgConnection implements Connection {
+class NgConnection extends Connection {
   static const String timeoutKey = 'timeout';
   static const String spaceKey = 'space';
 
@@ -40,10 +40,7 @@ class NgConnection implements Connection {
   String? get databaseName => space;
 
   @override
-  Function()? onClose;
-
-  @override
-  String? version;
+  Database? get database => NgDatabase(this);
 
   /// Invoked in [DriverManager.getConnection],
   /// you should not call this method directly.
@@ -53,7 +50,7 @@ class NgConnection implements Connection {
   /// 不应该直接调用这个方法。
   /// 因为连接还没有打开。
   NgConnection._create(Uri address,
-      {Map<String, dynamic>? properties, this.onClose}) {
+      {Map<String, dynamic>? properties, super.onClose}) {
     this.properties = properties ?? <String, dynamic>{};
     socketTransport = ng.TSocketTransport(
       host: address.host,

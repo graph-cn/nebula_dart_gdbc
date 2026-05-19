@@ -5,3 +5,5 @@
 **/pubspec.lock
 
 **/*_ye_dev.dart
+
+.env.test
